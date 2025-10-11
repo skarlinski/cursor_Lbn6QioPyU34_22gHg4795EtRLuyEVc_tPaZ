@@ -1,0 +1,25 @@
+{
+  "short_name": "http.cat",
+  "name": "HTTP Cat",
+  "icons": [
+    {
+      "src": "icon64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "icon192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/?utm_source=a2hs",
+  "display": "standalone",
+  "theme_color": "#d0383e",
+  "background_color": "#ffffff"
+}
