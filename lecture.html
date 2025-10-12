@@ -242,6 +242,34 @@
     .hint{ position:absolute; bottom:18px; right:20px; color:#888; font-size:12px; user-select:none; }
     a{ color:#a7f3d0; text-decoration:none; border-bottom:1px solid rgba(167,243,208,.4); }
     pre,code{ background:#0a0a0a; color:#d1fffb; padding:.1rem .3rem; border-radius:6px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: clamp(16px, 1.8vw, 20px);
+    }
+    th, td {
+      padding: 0.8rem 1rem;
+      border: 1px solid #444;
+      text-align: left;
+    }
+    th {
+      background: #2a2b2e;
+      font-weight: 600;
+    }
+    td {
+      background: #1e1f22;
+    }
+    tbody tr:nth-child(odd) td {
+      background: #25262a;
+    }
+    h3 {
+        margin-top: 2rem;
+        font-size: 1.5rem;
+        color: var(--bg);
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: .5rem;
+    }
     @media print{ .progress,.hint,.sidebar{ display:none!important; } .slide{ display:block; page-break-after:always; height:auto; } body{ background:white; color:black; } .content{ background:white; color:black; } }
   </style>
 </head>
@@ -700,6 +728,103 @@ data/private/
           <li>Fast models vs thinking models — token difference</li>
           <li>Models have different prices — gemini &lt; openai &lt; claude</li>
         </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-right" data-title="Model Pricing">
+    <div class="sidebar"><div class="sidebar-title">Deep Dive</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Model Pricing</h2>
+      <div class="body">
+        <p>Prices are typically per million tokens (MTok). Here's a comparison based on recent data:</p>
+
+        <h3>Anthropic Claude</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Input Price (/MTok)</th>
+              <th>Output Price (/MTok)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Claude Opus 4.1</td>
+              <td>$15.00</td>
+              <td>$75.00</td>
+            </tr>
+            <tr>
+              <td>Claude Sonnet 4.5</td>
+              <td>$3.00</td>
+              <td>$15.00</td>
+            </tr>
+            <tr>
+              <td>Claude Haiku 3.5</td>
+              <td>$0.80</td>
+              <td>$4.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Google Gemini</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Tier</th>
+              <th>Input Price (/MTok)</th>
+              <th>Output Price (/MTok)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="3">Gemini 2.5 Pro</td>
+              <td>Free Tier (&lt;200k tokens)</td>
+              <td>Free</td>
+              <td>Free</td>
+            </tr>
+            <tr>
+              <td>Paid Tier (prompts &lt;= 200k)</td>
+              <td>$1.25</td>
+              <td>$10.00</td>
+            </tr>
+            <tr>
+              <td>Paid Tier (prompts &gt; 200k)</td>
+              <td>$2.50</td>
+              <td>$15.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>OpenAI</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Input Price (/MTok)</th>
+              <th>Output Price (/MTok)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>gpt-5</td>
+              <td>$1.25</td>
+              <td>$10.00</td>
+            </tr>
+            <tr>
+              <td>GPT-4.1</td>
+              <td>$2.00</td>
+              <td>$8.00</td>
+            </tr>
+            <tr>
+              <td>o4-mini</td>
+              <td>$1.10</td>
+              <td>$4.40</td>
+            </tr>
+          </tbody>
+        </table>
+
       </div>
     </div></div>
   </section>
