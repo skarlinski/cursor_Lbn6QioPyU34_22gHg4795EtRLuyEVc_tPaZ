@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cursor Pilot Workshop — Minimalist Deck</title>
+  <style>
+    :root{
+      --bg:#0fb7b7;          /* title background */
+      --ink:#0b2b2e;         /* dark text */
+      --paper:#ffffff;       /* card background */
+      --muted:#6b7a7a;       /* muted text */
+      --accent:#0d9488;      /* accent */
+    }
+    html,body{ height:100%; margin:0; background:#111; color:#eaeaea; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    .deck{ height:100vh; overflow:hidden; position:relative; display:flex; }
+    .slide{ box-sizing:border-box; width:100%; height:100%; display:none; flex-direction: row; }
+    .slide.active{ display:flex; }
+    .title{ background:var(--bg); color:white; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding:7vh 8vw;}
+    .title h1{ font-size:clamp(36px,6vw,72px); margin:0 0 1rem; }
+    .title h2{ font-size:clamp(22px,3.6vw,42px); margin:0; font-weight:600; }
+    .content{ background:#111; color:#f5f5f5; }
+    .content h2{ margin:0 0 1rem; font-size:clamp(26px,4.3vw,52px); font-weight:700; letter-spacing:-0.02em; }
+    .content .body{ font-size:clamp(20px,2.5vw,29px); line-height:1.5; max-width:1100px; }
+    .content .body ul{ margin:.5rem 0 0 1rem; padding-left:1rem; }
+    .content .body li{ margin:.8rem 0; }
+
+    .slide-shortcuts {
+        background: #1a1b1e;
+        color: #f0f0f0;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: stretch;
+        gap: 3vw;
+        padding: 5vh 5vw;
+        flex-wrap: wrap;
+    }
+    .shortcut-column {
+        background: #25262a;
+        padding: 2rem 2.5rem;
+        border-radius: 16px;
+        border: 1px solid #333;
+        flex: 1;
+        min-width: 300px;
+        max-width: 450px;
+    }
+    .shortcut-column h3 {
+        margin: 0 0 1.5rem 0;
+        font-size: 1.8rem;
+        color: var(--bg);
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: .5rem;
+    }
+    .shortcut-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: .8rem 0;
+        border-bottom: 1px solid #3a3a3a;
+        font-size: 1.1rem;
+    }
+    .shortcut-item:last-child { border-bottom: none; }
+    .shortcut-item kbd {
+        background: #3e3f42;
+        padding: .3rem .7rem;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: .95em;
+        border: 1px solid #555;
+        box-shadow: inset 0 -2px 0 #2a2b2e;
+    }
+    /* --- NEW TASK LEGEND STYLES --- */
+    .shortcut-legend {
+      background: #f4f4f5;
+      border: 1px solid #e4e4e7;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .shortcut-legend h4 {
+      margin: 0 0 .5rem 0;
+      font-size: 1rem;
+      color: #52525b;
+    }
+    .shortcut-legend ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    .shortcut-legend li {
+      display: flex;
+      justify-content: space-between;
+      font-size: .95rem;
+      padding: .2rem 0;
+      color: #3f3f46;
+    }
+    .shortcut-legend code {
+      background: #e4e4e7;
+      color: #18181b;
+      padding: .1rem .4rem;
+      border-radius: 4px;
+    }
+    /* --- END NEW STYLES --- */
+
+    .sidebar {
+        flex-shrink: 0;
+        width: 120px;
+        background: var(--bg);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem 1rem;
+        box-sizing: border-box;
+    }
+    .sidebar-title {
+        font-size: clamp(28px, 3.5vw, 48px);
+        font-weight: 700;
+        white-space: pre-wrap;
+        text-align: center;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+    }
+    .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 7vh 8vw;
+        box-sizing: border-box;
+        width:100%;
+        overflow: auto;
+    }
+    .main-content-inner {
+        width: 100%;
+        max-width: 1100px;
+    }
+    .slide.sidebar-right { flex-direction: row-reverse; }
+
+    /* Task Slide Layout */
+    .slide.task {
+        position: relative;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+        background:#111;
+    }
+    .task-card {
+        background: var(--paper);
+        color: var(--ink);
+        padding: clamp(2rem, 5vw, 3.5rem) clamp(2rem, 6vw, 4rem);
+        border-radius: 20px;
+        max-width: 1100px; /* --- WIDENED CARD --- */
+        width: 90%;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .task-card h2 { color: var(--ink); }
+    .task-card .body { color: #333; }
+    .task-card .body ol li {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+    .task-card .body ol li:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    /* --- NEW RULE FOR REPO NAME --- */
+    .task-card .body .repo-url {
+        margin: .8rem 0;
+        word-break: break-all;
+    }
+    .task .timer-panel {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        margin: 0;
+        border-radius: 14px;
+        padding: .8rem 1.2rem;
+        background: rgba(11, 11, 11, 0.7);
+        backdrop-filter: blur(5px);
+        color: white;
+        text-align: center;
+    }
+    .task .timer-panel .timer-label { display: none; }
+    .task .timer{ font-variant-numeric:tabular-nums; font-size:clamp(26px,3.5vw,44px); font-weight:700; }
+    .task .controls{ display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap; justify-content: center;}
+
+    /* Special Shortcut Task Styling */
+    .slide[data-title*="Migrate"] .task-card {
+        border-left: 8px solid var(--accent);
+        background: #f0fdfa;
+    }
+    .slide[data-title*="Migrate"] .task-card ol { list-style-type: none; padding-left: 0; }
+    .slide[data-title*="Migrate"] .task-card li {
+        padding: .8rem 0;
+        font-size: clamp(16px, 1.8vw, 22px);
+        border-bottom: 1px solid #d1e9e7;
+    }
+    .slide[data-title*="Migrate"] .task-card li:last-child { border-bottom: none; }
+    .slide[data-title*="Migrate"] .task-card li::before {
+        content: "✓";
+        color: var(--accent);
+        margin-right: 1rem;
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+    /* --- NEW TASK LEGEND STYLES --- */
+    .shortcut-legend {
+      background: #f4f4f5;
+      border: 1px solid #e4e4e7;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .shortcut-legend h4 {
+      margin: 0 0 .5rem 0;
+      font-size: 1rem;
+      color: #52525b;
+    }
+    .shortcut-legend ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    .shortcut-legend li {
+      display: flex;
+      justify-content: space-between;
+      font-size: .95rem;
+      padding: .2rem 0;
+      color: #3f3f46;
+    }
+    .shortcut-legend code {
+      background: #e4e4e7;
+      color: #18181b;
+      padding: .1rem .4rem;
+      border-radius: 4px;
+    }
+    /* --- END NEW STYLES --- */
+
+    .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:3vw; }
+    button{ background:var(--accent); color:white; border:none; border-radius:10px; padding:.6rem 1rem; font-size:1rem; cursor:pointer; }
+    button.secondary{ background:#374151; }
+    .progress{ position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:.4rem; z-index:10; }
+    .dot{ width:10px; height:10px; border-radius:50%; background:#3a3a3a; opacity:.7; }
+    .dot.active{ background:var(--accent); opacity:1; }
+    .hint{ position:absolute; bottom:18px; right:20px; color:#888; font-size:12px; user-select:none; }
+    a{ color:#a7f3d0; text-decoration:none; border-bottom:1px solid rgba(167,243,208,.4); }
+    pre,code{ background:#0a0a0a; color:#d1fffb; padding:.1rem .3rem; border-radius:6px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: clamp(16px, 1.8vw, 20px);
+    }
+    th, td {
+      padding: 0.8rem 1rem;
+      border: 1px solid #444;
+      text-align: left;
+    }
+    th {
+      background: #2a2b2e;
+      font-weight: 600;
+    }
+    td {
+      background: #1e1f22;
+    }
+    tbody tr:nth-child(odd) td {
+      background: #25262a;
+    }
+    h3 {
+        margin-top: 2rem;
+        font-size: 1.5rem;
+        color: var(--bg);
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: .5rem;
+    }
+    /* New styles for Warhol slide */
+    .quote-container {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 0 4vw;
+    }
+    .quote-container blockquote {
+        font-size: clamp(22px, 2.8vw, 36px);
+        font-style: italic;
+        color: #f0f0f0;
+        line-height: 1.4;
+        max-width: 900px;
+        margin: 0 auto 1rem;
+        border-left: 4px solid var(--accent);
+        padding-left: 2rem;
+        text-align: left;
+    }
+    .quote-container cite {
+        font-size: clamp(16px, 1.8vw, 22px);
+        color: var(--muted);
+        display: block;
+        text-align: right;
+        max-width: 900px;
+        margin: 0 auto;
+        padding-right: 2rem;
+    }
+    .collage {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 2vw;
+        flex-wrap: wrap;
+    }
+    .collage img {
+        width: 100%;
+        max-width: 350px;
+        height: auto;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 10px solid var(--paper);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+        transition: transform 0.3s ease, box-shadow 0.3s ease, z-index 0s 0.15s ease;
+        position: relative;
+    }
+    .collage img:hover {
+        transform: scale(1.15) rotate(0deg) !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        z-index: 10;
+    }
+    .collage .img-1 {
+        transform: rotate(-6deg);
+        margin-right: -50px;
+    }
+    .collage .img-2 {
+        transform: rotate(4deg) translateY(20px);
+        z-index: 5;
+        margin-left: -50px;
+        margin-right: -50px;
+    }
+    .collage .img-3 {
+        transform: rotate(8deg);
+        margin-left: -80px;
+        max-width: 420px;
+        transform: rotate(6deg) translateY(15px);
+    }
+    /* New styles for Companies slide */
+    .slide.companies {
+        background: #1a1b1e;
+        color: #f0f0f0;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 7vh 8vw;
+    }
+    .companies .company-collage {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 3rem;
+    }
+    .companies .company-collage img {
+        max-height: 200px;
+        max-width: 320px;
+        filter: grayscale(100%);
+        opacity: 0.8;
+        transition: all 0.3s ease;
+        border: 8px solid var(--paper);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        position: relative;
+    }
+    .companies .company-collage img:hover {
+        filter: grayscale(0%);
+        opacity: 1;
+        transform: scale(1.1) rotate(0deg) !important;
+        z-index: 10;
+    }
+    .companies .company-collage .img-c-1 {
+        transform: rotate(-8deg);
+        z-index: 1;
+    }
+    .companies .company-collage .img-c-2 {
+        transform: rotate(2deg) translateY(-20px);
+        margin: 0 -40px;
+        z-index: 5;
+    }
+    .companies .company-collage .img-c-3 {
+        transform: rotate(10deg);
+        z-index: 1;
+    }
+    .companies h2 {
+        font-size: clamp(32px, 5vw, 60px);
+        color: var(--bg);
+        margin: 0;
+    }
+    /* New styles for Discussion slide */
+    .slide.discussion {
+        background: #25262a; /* A different dark shade */
+    }
+    .discussion-content {
+        max-width: 900px;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .discussion-content .icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        color: var(--accent);
+    }
+    .discussion-content h2 {
+        font-size: clamp(34px, 5.5vw, 64px);
+        color: #f0f0f0;
+        margin: 0;
+        line-height: 1.2;
+    }
+    .discussion-content .body {
+        text-align: left;
+        margin-top: 2.5rem;
+    }
+    .discussion-content .body ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .discussion-content .body li {
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 1rem;
+    }
+    .discussion-content .body li::before {
+        content: '❓';
+        position: absolute;
+        left: 0;
+        top: -2px;
+        font-size: 1.2rem;
+    }
+    @media print{ .progress,.hint,.sidebar{ display:none!important; } .slide{ display:block; page-break-after:always; height:auto; } body{ background:white; color:black; } .content{ background:white; color:black; } }
+  </style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <section class="slide title active" data-title="Welcome">
+    <h1>Developing with Cursor - Deep Dive</h1>
+  </section>
+
+  <section class="slide content" data-title="Warhol Quote">
+    <div class="main-content">
+        <div class="main-content-inner">
+            <div class="quote-container">
+                <blockquote>
+                    You can be watching TV and see Coca-Cola, and know that the President drinks Coke, Liz Taylor drinks Coke, A Coke is a Coke and no amount of money can get you a better Coke than the one the bum on the corner is drinking.
+                </blockquote>
+                <cite>– Andy Warhol</cite>
+            </div>
+            <div class="collage">
+                <img src="images/warhol/andy-warhol-campbells-soup-can-old-fashioned-vegetable-screen-print-available-for-sale-on-composition-gallery1713281511-01266.jpeg" alt="Andy Warhol Campbell's Soup Can" class="img-1">
+                <img src="images/warhol/warhol-headshot.webp" alt="Andy Warhol Headshot" class="img-2">
+                <img src="images/warhol/andy-warhol-marilyn-1200x800.jpg" alt="Andy Warhol Marilyn Monroe" class="img-3">
+            </div>
+        </div>
+    </div>
+  </section>
+
+  <!-- <section class="slide companies" data-title="AI Cinderella Stories">
+    <div class="company-collage">
+        <img src="images/companies/KlfKxE6N.jpeg" alt="Vercel Logo" class="img-c-1">
+        <img src="images/companies/opengraph-image.webp" alt="Cursor Logo" class="img-c-2">
+        <img src="images/companies/lovable-logo-bg-dark.png" alt="Lovable Logo" class="img-c-3">
+    </div>
+    <h2>AI Cinderella Stories</h2>
+    <br>
+    <img src="images/companies/companies.png" alt="BC" class="img-c-4">
+  </section> -->
+
+
+  <section class="slide content sidebar-left" data-title="About Me">
+    <div class="sidebar"><div class="sidebar-title">Welcome</div></div>
+    <div class="main-content"><div class="main-content-inner">
+    <h2>Nice to meet you!</h2>
+    <div class="body">
+      <ul>
+        <li>Yaron Karlinski – Software Developer, 15 years in R&amp;D</li>
+        <li>Formerly at New Relic (datadog competitor) and Lightricks</li>
+        <li>Specialized in MLOps</li>
+        <li>Led developer AI training in Lightricks.</li>
+        <li>Today: co-founder of handsonai — helping R&amp;D teams adopt AI.</li>
+        <!-- <li>Me and India🇮🇳</li> -->
+      </ul>
+    </div>
+  </div></div>
+</section>
+
+
+  <section class="slide discussion sidebar-left" data-title="Discussion">
+    <div class="sidebar"><div class="sidebar-title">Welcome</div></div>
+    <div class="main-content">
+        <div class="main-content-inner">
+            <div class="discussion-content">
+                <div class="icon">&#128172;</div>
+                <h2>Tell me your cursor stories</h2>
+            </div>
+        </div>
+    </div>
+  </section>
+
+
+  <section class="slide content sidebar-left" data-title="What we’ll do today">
+    <div class="sidebar"><div class="sidebar-title">Welcome</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>3 Axes of Today’s Workshop</h2>
+      <div class="body">
+        <ul>
+          <li><strong>Alignment:</strong> Leave with a complete, efficient, and safe Cursor setup.</li>
+          <li><strong>Showing off:</strong> Shortcuts, hidden tricks, background mode the Cursor-fu.</li>
+          <li><strong>Deep Dive:</strong> Models, context management, indexing, <code>.cursor</code>, workspaces.</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+
+
+
+  <section class="slide content sidebar-left" data-title="Workshop Format">
+    <div class="sidebar"><div class="sidebar-title">Welcome</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Workshop Format</h2>
+      <div class="body">
+        <ul>
+          <li>We’ll use your own projects</li>
+          <li>You’ll complete small timed tasks (some competitive)</li>
+          <li>I’ll set a timer on screen for each task</li>
+          <li>Every task has an "advanced" option, if you finished early</li>
+          <li>Between tasks, we’ll debrief and learn</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-left" data-title="Admin Notes">
+    <div class="sidebar"><div class="sidebar-title">Welcome</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>What you'll need</h2>
+      <div class="body">
+        <ul>
+          <li>Cursor installed and ready</li>
+          <li>A project ready for you to work on</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content task" data-title="Setup Check" data-timer-mins="4">
+    <div class="task-card">
+      <h2>Task: Setup Check</h2>
+      <div class="body">
+        <ol>
+          <li>Open Cursor</li>
+          <li>In Cursor: choose File → Open Folder / Open Project (windows)</li>
+          <li>Optional: open terminal with Ctrl + ` and create a new branch for our changes</li>
+          <li>Turn on the notifications in  Cursor settings -> system notifications</li>
+          <li>Cursor settings -> completion sounds</li>
+          <li>Cursor settings -> imort settings from vscode (if applicable)</li>
+          <li>Advanced — stay on Cursor settings and explore - Models. Rules, Chat, Beta</li>
+        </ol>
+      </div>
+    </div>
+    <div class="timer-panel">
+      <div class="timer-label">Timer</div>
+      <div class="timer">3:00</div>
+      <div class="controls">
+        <button class="start">Start</button>
+        <button class="pause secondary">Pause</button>
+        <button class="reset secondary">Reset</button>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="slide content sidebar-right" data-title="Meet the Project">
+    <div class="sidebar"><div class="sidebar-title">Status Cats</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Meet the Project</h2>
+      <div class="body">
+        <ul>
+          <li>“Status Cats” — based on <a href="https://http.cat/200">https://http.cat/200</a></li>
+          
+        </ul>
+      
+        <div style="display: flex; justify-content: center;">
+          <img style="height:50vh;" src="images/cats/500.png" alt="Status Cats" class="img-status-cats">
+        </div>
+      </div>
+      
+    </div></div>
+  </section>
+
+
+  <section class="slide title" data-title="Cursor Basics">
+    <h1>Cursor Basics — Orientation</h1>
+    <h2>Core features and daily actions.</h2>
+    <!-- Examples
+      tab completion - 
+      for loop
+      function to use openai api to generate a response
+
+      Cmd + k - Change to gemini api - we add the gemini api docs
+      
+      Terminal command prompt - Cmd + k
+      Kill service on port 3000
+
+      Agent - Change the design of the app
+      Agent - curl the api and check that it works
+      Ask - how is localization managed in the app?
+      Plan - Add full hebrew support
+
+      Context
+      Files - hebrew localization
+      Docs - gemini api docs
+      Docs - Cyberark api docs
+      Ask - check all my endpoints, are they 100% aligned with the docs?
+      git - Password
+
+
+    -->
+  </section>
+
+  <section class="slide content sidebar-left" data-title="Core features">
+    <div class="sidebar"><div class="sidebar-title">Cursor Basics</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Core features</h2>
+      <div class="body">
+        <ul>
+          <li>Cmd + L → Open side panel</li>
+          <li>Modes: Ask / Agent / Background / Plan</li>
+          <li>Model selector</li>
+          <li>Local edit (Cmd + K, Cmd + Shift + K)</li>
+          <li>Tab completions</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-left" data-title="Commands and References">
+    <div class="sidebar"><div class="sidebar-title">Cursor Basics</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Commands and References</h2>
+      <div class="body">
+        <ul>
+          <li>Use <code>@</code> to omni context selector
+            <ul>
+              <li>Find the commit with the password(name)</li>
+              <li>Add the CyberArk docs / important you are working on</li>
+            </ul>
+          </li>
+          <li>Use <code>/</code> for commands</li>
+          <li>Use <code>#</code> for files</li>
+          <li>Adding docs</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-left" data-title="Terminal & Checkpoints">
+    <div class="sidebar"><div class="sidebar-title">Cursor Basics</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Terminal</h2>
+      <div class="body">
+        <ul>
+          <li>Open integrated terminal</li>
+          <li>Cursor writes our commands</li>
+          <li>Keep checkpoints (commits) after each task</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-left" data-title="Terminal & Checkpoints">
+    <div class="sidebar"><div class="sidebar-title">Cursor Basics</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Checkpoints</h2>
+      <div class="body">
+        <ul>
+          <li>Go back in time with checkpoints</li>
+          <li>best practice - commit after each task</li>
+
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide title" data-title="Multi-Repo">
+    <h1>Multi-Repo Setup</h1>
+  </section>
+
+  <section class="slide content sidebar-left" data-title="Multi-Repo Context">
+    <div class="sidebar"><div class="sidebar-title">Multi-Repo Setup</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Multi-Repo Context</h2>
+      <div class="body">
+        <ul>
+          <li>Cursor can index multiple projects</li>
+          <li>Share context across repos for larger organizations</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content task" data-title="Keyboard Shortcuts" data-timer-mins="4" data-timer-up="true">
+    <section class="slide slide-shortcuts" data-title="Shortcuts">
+        <div class="shortcut-column">
+          <h3>Visual Studio</h3>
+          <div class="shortcut-item"><span>Omni Menu</span><kbd>Cmd + Shift + P</kbd></div>
+          <div class="shortcut-item"><span>Find a File</span><kbd>Cmd + P</kbd></div>
+          <div class="shortcut-item"><span>Open Terminal</span><kbd>Ctrl + `</kbd></div>
+          <div class="shortcut-item"><span>Open Version control</span><kbd>Ctrl + Shift + G</kbd></div>
+        </div>
+        <div class="shortcut-column">
+          <h3>Cursor</h3>
+          <div class="shortcut-item"><span>Toggle Chat Sidebar</span><kbd>Cmd + L</kbd></div>
+          <div class="shortcut-item"><span>Inline Edit</span><kbd>Cmd + K</kbd></div>
+          <div class="shortcut-item"><span>Full File Edit</span><kbd>Cmd + Shift + K</kbd></div>
+          <div class="shortcut-item"><span>Change Model</span><kbd>Cmd + /</kbd></div>
+          <div class="shortcut-item"><span>Change Mode</span><kbd>Cmd + .</kbd></div>
+          <div class="shortcut-item"><span>Terminal Command Prompt</span><kbd>Cmd + K</kbd></div>
+        </div>
+      </section>    
+    <div class="task-card">
+        
+      <h2>Task: Keyboard shortcuts in practice</h2>
+      <div class="body">
+        <p><strong>Title:</strong> Visual studio + react</p>
+        <p>Adding the server to the readme files</p>
+        
+        <ol>
+          <li>Open / create readme.md</li>
+          <li>Open / focus on the chat sidebar</li>
+          <li>Use <strong>ask</strong> to review Some aspect of the project</li>
+          <li>Run <strong>agent</strong> to update the readme.md with that aspect, reference the file</li>
+          <li>Open the terminal and open a prompt window</li>
+          <li>Ask the terminal to `cat` the readme.md file</li>
+          <li>Reference the terminal output to <strong>ask</strong> mode and change the model (try gemini 2.5)</li>
+          <li>Open Git tab and review the changes (use mouse to review)</li>
+          <li>Advanced - review the rest of the shortcuts from docs</li>
+        </ol>
+      </div>
+    </div>
+    <div class="timer-panel">
+      <div class="timer-label">Timer</div>
+      <div class="timer">07:00</div>
+      <div class="controls">
+        <button class="start">Start</button>
+        <button class="pause secondary">Pause</button>
+        <button class="reset secondary">Reset</button>
+      </div>
+    </div>
+  </section>
+
+<!-- 
+  <section class="slide content sidebar-left" data-title="Changes to the original">
+    <div class="sidebar"><div class="sidebar-title">Enhancing the App</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Changes to the original</h2>
+      <div class="body">
+        <ul>
+          <li>Upload your own cat picture</li>
+          <li>We want to add name + email => stored in server</li>
+          <li>Works, but could be better</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-left" data-title="Choose an Enhancement">
+    <div class="sidebar"><div class="sidebar-title">Enhancing the App</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Choose an Enhancement</h2>
+      <div class="body">
+        <ul>
+          <li>Add email validation</li>
+          <li>Add a preview to the uploaded image</li>
+          <li>Improve styling</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content task" data-title="Improve the Cat App" data-timer-mins="15">
+      <div class="task-card">
+          <h2>Task: Implement One Enhancement</h2>
+          <div class="body">
+            <ol>
+              <li>Pick one enhancement idea</li>
+              <li>Use Cursor to edit — don’t type manually</li>
+              <li>Test it locally</li>
+              <li>Share your result in Teams</li>
+            </ol>
+          </div>
+      </div>
+      <div class="timer-panel">
+        <div class="timer-label">Timer</div>
+        <div class="timer">15:00</div>
+        <div class="controls">
+          <button class="start">Start</button>
+          <button class="pause secondary">Pause</button>
+          <button class="reset secondary">Reset</button>
+        </div>
+      </div>
+  </section> -->
+
+  <section class="slide title" data-title="Securing the Cats">
+    <h1>Securing the Cats</h1>
+    <h2>Be smart about what reaches the model.</h2>
+  </section>
+
+  <section class="slide content sidebar-right" data-title="Why Security Matters">
+    <div class="sidebar"><div class="sidebar-title">Securing the Cats</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Why Security Matters</h2>
+      <div class="body">
+        <ul>
+          <li>Who does Cursor share our code with? <a href="https://cursor.com/security">https://cursor.com/security</a></li>
+          <li>Cursor sends snippets to the cloud for analysis, storage &amp; indexing.</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-right" data-title="Using .cursorignore">
+    <div class="sidebar"><div class="sidebar-title">Securing the Cats</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Using .cursorignore</h2>
+      <div class="body">
+        <p>Add files you don’t want Cursor to read</p>
+        <pre>.env
+node_modules/
+data/private/
+</pre>
+      </div>
+    </div></div>
+  </section>
+  <section class="slide title" data-title="Securing the Cats">
+    <h1>One <i style="color: red;">Rules</i> to rule them all</h1>
+    
+  </section>
+  <section class="slide content sidebar-right" data-title="Creating .cursor/rules">
+    <div class="sidebar"><div class="sidebar-title">Securing the Cats</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Creating .cursor/rules</h2>
+      <div class="body">
+        <ul>
+          <li>Rules to apply everywhere</li>
+          <li>Rules to apply conditionally</li>
+          <li>Rules take context, sent every request</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide discussion sidebar-right" data-title="Actions and Rules use cases">
+    <div class="sidebar"><div class="sidebar-title">Securing the Cats</div></div>
+    <div class="main-content">
+        <div class="main-content-inner">
+            <div class="discussion-content">
+                <div class="icon">&#128172;</div>
+                <h2>Actions and Rules use cases</h2>
+            </div>
+        </div>
+    </div>
+  </section>
+
+  <section class="slide title" data-title="Prepare your project">
+    <h1>Preparing your own project</h1>
+  </section>
+  <section class="slide content task" data-title="Keyboard Shortcuts" data-timer-mins="7" data-timer-up="true">
+  
+    <div class="task-card">
+        
+      <h2>Task: Keyboard shortcuts in practice: blind</h2>
+      <div class="body">
+        <p><strong>Title:</strong> Visual studio + react</p>
+        <p>Adding the server to the readme files</p>
+        <ol>
+          <li>Open / create readme.md</li>
+          <li>Open / focus on the chat sidebar</li>
+          <li>Use <strong>ask</strong> to review Some aspect of the project</li>
+          <li>Run <strong>agent</strong> to update the readme.md, reference the file</li>
+          <li>Open the terminal and open a prompt window</li>
+          <li>Ask the terminal to `cat` the readme.md file</li>
+          <li>Pass to the terminal output to <strong>ask</strong> mode and change the model (try gemini 2.5)</li>
+          <li>Open Git tab and review the changes (use mouse to review)</li>
+          <li>Advanced - review the rest of the shortcuts from docs</li>
+        </ol>
+      </div>
+    </div>
+    <div class="timer-panel">
+      <div class="timer-label">Timer</div>
+      <div class="timer">05:00</div>
+      <div class="controls">
+        <button class="start">Start</button>
+        <button class="pause secondary">Pause</button>
+        <button class="reset secondary">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- <section class="slide content task" data-title="Prepare your project" data-timer-mins="5">
+      <div class="task-card">
+          <h2>Task: Prepare your own project for Cursor</h2>
+          <div class="body">
+            <ol>
+              <li>Create <code>.cursorignore</code> in project root</li>
+              <li>Add the CyberArk docs you are working on with <code>@docs</code></li>
+              <li>Add related relevant repos to workspace (only what you need daily)</li>
+              <li>Create a custom action with <code>/</code> (e.g., build &amp; test &amp; find root cause)</li>
+              <li>Advanced — think and apply an always rule and a conditional rule</li>
+            </ol>
+          </div>
+      </div>
+      <div class="timer-panel">
+        <div class="timer-label">Timer</div>
+        <div class="timer">10:00</div>
+        <div class="controls">
+          <button class="start">Start</button>
+          <button class="pause secondary">Pause</button>
+          <button class="reset secondary">Reset</button>
+        </div>
+      </div>
+  </section> -->
+
+  <section class="slide title" data-title="Deep dive">
+    <h1>Deep Dive</h1>
+  </section>
+
+  <section class="slide content sidebar-right" data-title="Choosing Models">
+    <div class="sidebar"><div class="sidebar-title">Deep Dive</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Choosing Models</h2>
+      <div class="body">
+        <ul>
+          <li>You should very rarely reach the full context of your model.</li>
+          <li>Smallest context window ≈ 200k tokens — about 700 pages / 20k lines of code</li>
+          <li>Fast models vs thinking models — token difference</li>
+          <li>Models have different prices — gemini &lt; openai &lt; claude</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide discussion sidebar-right" data-title="Model Experiences">
+    <div class="sidebar"><div class="sidebar-title">Deep Dive</div></div>
+    <div class="main-content">
+        <div class="main-content-inner">
+            <div class="discussion-content">
+                <div class="icon">&#128172;</div>
+                <h2>Model Experiences</h2>
+            </div>
+        </div>
+    </div>
+  </section>
+
+  <section class="slide content sidebar-right" data-title="Model Pricing">
+    <div class="sidebar"><div class="sidebar-title">Deep Dive</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Model Pricing</h2>
+      <div class="body">
+        <p>Prices are typically per million tokens (MTok). Here's a comparison based on recent data:</p>
+
+        <h3>Anthropic Claude</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Input Price (/MTok)</th>
+              <th>Output Price (/MTok)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Claude Opus 4.1</td>
+              <td>$15.00</td>
+              <td>$75.00</td>
+            </tr>
+            <tr>
+              <td>Claude Sonnet 4.5</td>
+              <td>$3.00</td>
+              <td>$15.00</td>
+            </tr>
+            <tr>
+              <td>Claude Haiku 3.5</td>
+              <td>$0.80</td>
+              <td>$4.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Google Gemini</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Tier</th>
+              <th>Input Price (/MTok)</th>
+              <th>Output Price (/MTok)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="3">Gemini 2.5 Pro</td>
+              <td>Free Tier (&lt;200k tokens)</td>
+              <td>Free</td>
+              <td>Free</td>
+            </tr>
+            <tr>
+              <td>Paid Tier (prompts &lt;= 200k)</td>
+              <td>$1.25</td>
+              <td>$10.00</td>
+            </tr>
+            <tr>
+              <td>Paid Tier (prompts &gt; 200k)</td>
+              <td>$2.50</td>
+              <td>$15.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>OpenAI</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Input Price (/MTok)</th>
+              <th>Output Price (/MTok)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>gpt-5</td>
+              <td>$1.25</td>
+              <td>$10.00</td>
+            </tr>
+            <tr>
+              <td>GPT-4.1</td>
+              <td>$2.00</td>
+              <td>$8.00</td>
+            </tr>
+            <tr>
+              <td>o4-mini</td>
+              <td>$1.10</td>
+              <td>$4.40</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-right" data-title="Keeping updated">
+    <div class="sidebar"><div class="sidebar-title">Deep Dive</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Keeping updated</h2>
+      <div class="body">
+        <ul>
+          <li>model Leaderboards</li>
+          <li>lmarena.ai</li>
+          <li><a href="https://openrouter.ai/rankings">https://openrouter.ai/rankings</a></li>
+          <li>Follow:</li>
+          <ul>
+            <li>Andrej Karpathy — Twitter / YouTube</li>
+            <li>Yam Peleg — Twitter — research and open source</li>
+            <li>Chen Reuven — LinkedIn</li>
+          </ul>
+          <li>Podcast / YouTube</li>
+          <ul>
+            <li>ThursdAI — Technical, all you need to know</li>
+            <li>Hard Fork — Fun, all AI related news</li>
+          </ul>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+
+  <section class="slide content sidebar-right" data-title="Discussing code ownership">
+    <div class="sidebar"><div class="sidebar-title">Deep Dive</div></div>
+    <div class="main-content">
+        <div class="main-content-inner">
+            <div class="discussion-content">
+                <div class="icon">&#128172;</div>
+                <h2>Discussing code ownership</h2>
+                <div class="body">
+                    <ul>
+                      <li>What can we do to keep ourself accountable for our code?</li>
+                      <li>How to make sure our junior team members are actually learning?</li>
+                      <li>How should AI affect our Code review process?</li>
+                      <li>Is End-to-End testing more urgent now?</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+  </section>
+
+
+  <section class="slide content sidebar-left" data-title="Migration Guide">
+    <div class="sidebar"><div class="sidebar-title">Multi-Repo Setup</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Migration Guide</h2>
+      <div class="body">
+        <ul>
+          <li><a href="https://cursor.com/docs/configuration/migrations/jetbrains">https://cursor.com/docs/configuration/migrations/jetbrains</a></li>
+          <li>Ensure consistency when switching IDEs or machines</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content task" data-title="Migrate Shortcuts" data-timer-mins="6">
+      <div class="task-card">
+          <h2>Task: Migrate from VS or IntelliJ</h2>
+          <div class="body">
+            <p><strong>Title:</strong> Feeling at home</p>
+            <ol>
+              <li>Follow migration guide <a href="https://cursor.com/docs/configuration/migrations/jetbrains">cursor.com/docs/configuration/migrations/jetbrains</a></li>
+              <li>Download shortcuts</li>
+              <li>Choose a theme you like</li>
+            </ol>
+          </div>
+      </div>
+      <div class="timer-panel">
+        <div class="timer-label">Timer</div>
+        <div class="timer">06:00</div>
+        <div class="controls">
+          <button class="start">Start</button>
+          <button class="pause secondary">Pause</button>
+          <button class="reset secondary">Reset</button>
+        </div>
+      </div>
+  </section>
+
+  <section class="slide title" data-title="Managing Context">
+    <h1>Managing Context & Conversations</h1>
+  </section>
+
+  <section class="slide content sidebar-right" data-title="When to Reset">
+    <div class="sidebar"><div class="sidebar-title">Managing Context</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>When to Reset</h2>
+      <div class="body">
+        <ul>
+          <li>If the model starts “forgetting,” start a new chat</li>
+          <li>Long conversations may exceed context window</li>
+          <li>Break tasks with <code>/summarize</code></li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content sidebar-right" data-title="No Rabbitholes">
+    <div class="sidebar"><div class="sidebar-title">Managing Context</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>No Rabbitholes</h2>
+      <div class="body">
+        <ul>
+          <li>Zero tolerance for model misunderstandings.</li>
+          <li>Be specific, short, and clear</li>
+          <li>When in doubt, revert and change model</li>
+          <li>Still in doubt? New conversation.</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  
+  <section class="slide content sidebar-left" data-title="Key Takeaways">
+    <div class="sidebar"><div class="sidebar-title">Wrap-Up</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Internal prompts and MCP</h2>
+      <div class="body">
+        <ul>
+          <li>MCP is a way to extend Cursor's capabilities by adding more tools to tool use</li>
+          <li><a href= "https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools/tree/main/Cursor%20Prompts" target="_blank"> Reverse engineered Cursor prompts</a></li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide title" data-title="Wrap-Up">
+    <h1>Wrap-Up</h1>
+  </section>
+
+
+  <section class="slide content sidebar-left" data-title="Key Takeaways">
+    <div class="sidebar"><div class="sidebar-title">Wrap-Up</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>What's in the future?</h2>
+      <div class="body">
+        <ul>
+          <li>MCP support</li>
+          <li>Background Agent</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+
+  <section class="slide content sidebar-left" data-title="Key Takeaways">
+    <div class="sidebar"><div class="sidebar-title">Wrap-Up</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Key Takeaways</h2>
+      <div class="body">
+        <ul>
+          <li>Orientation, Rules, actions, settings</li>
+          <li>Discussed models and using them well</li>
+          <li>We looked a bit into inner workings of Cursor</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="slide content task" data-title="Final Task — Reflection" data-timer-mins="3">
+    <div class="task-card">
+        <h2>Final Task: What Will You Do Tomorrow?</h2>
+        <div class="body">
+          <ol>
+            <li>Think of one feature from today you’ll start using immediately</li>
+            <li>Post it in Teams</li>
+            <li>That’s your pilot action item</li>
+          </ol>
+        </div>
+    </div>
+    <div class="timer-panel">
+      <div class="timer-label">Timer</div>
+      <div class="timer">03:00</div>
+      <div class="controls">
+        <button class="start">Start</button>
+        <button class="pause secondary">Pause</button>
+        <button class="reset secondary">Reset</button>
+      </div>
+    </div>
+</section>
+
+
+  <section class="slide content sidebar-left" data-title="Stay Connected">
+    <div class="sidebar"><div class="sidebar-title">Wrap-Up</div></div>
+    <div class="main-content"><div class="main-content-inner">
+      <h2>Stay Connected</h2>
+      <div class="body">
+        <ul>
+          <li>LinkedIn: <a href="https://www.linkedin.com/in/yaron-karlinski-3b608810">https://linkedin.com/in/yaron-karlinski</a></li>
+          <li>Teams / Email / Whatsapp: 054-450-5609</li>
+          <li>Let’s keep improving AI workflows together</li>
+        </ul>
+      </div>
+    </div></div>
+  </section>
+
+  <div class="progress" id="progress"></div>
+  <div class="hint">Navigate: ← → or Space. Press T to toggle the timer on task slides.</div>
+</div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let index = 0;
+  const progress = document.getElementById('progress');
+
+  function buildDots(){
+    progress.innerHTML='';
+    slides.forEach((_,i)=>{
+      const d=document.createElement('div');
+      d.className='dot'+(i===index?' active':'');
+      d.addEventListener('click',()=>go(i));
+      progress.appendChild(d);
+    });
+  }
+  function go(i){
+    slides[index].classList.remove('active');
+    index = Math.max(0, Math.min(i, slides.length-1));
+    slides[index].classList.add('active');
+    updateDots();
+    resetTimerIfAny();
+    updateURLParam();
+  }
+  function updateDots(){
+    Array.from(progress.children).forEach((d,i)=>d.classList.toggle('active', i===index));
+    document.title = (slides[index].dataset.title||'Slide')+ ' — Cursor Pilot Workshop';
+  }
+  function updateURLParam(){
+    try{
+      const url = new URL(window.location.href);
+      url.searchParams.set('slide', String(index));
+      history.replaceState(null, '', url.toString());
+    }catch(e){ /* noop */ }
+  }
+  function next(){ go(index+1); }
+  function prev(){ go(index-1); }
+
+  window.addEventListener('keydown', (e)=>{
+    if(['ArrowRight','PageDown',' '].includes(e.key)) next();
+    if(['ArrowLeft','PageUp'].includes(e.key)) prev();
+    if(e.key.toLowerCase()==='t') toggleStartPause();
+  });
+
+  // Timer logic
+  let interval=null, elapsed=0;
+  function elTimer(){ return slides[index].querySelector('.timer'); }
+  function taskSlide(){ return slides[index].classList.contains('task'); }
+  function isCountUp(){ return slides[index].hasAttribute('data-timer-up'); }
+  function readDefaultSeconds(){ const m=parseInt(slides[index].getAttribute('data-timer-mins')||'0',10); return m*60; }
+  function format(s){ const m=Math.floor(s/60).toString().padStart(2,'0'); const ss=(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
+  function render(){ 
+    if(!elTimer()) return;
+    const timeToDisplay = isCountUp() ? elapsed : readDefaultSeconds() - elapsed;
+    elTimer().textContent = format(timeToDisplay); 
+  }
+  function start(){ 
+    if(!taskSlide()||interval) return; 
+    interval=setInterval(()=>{ 
+        elapsed++; 
+        render(); 
+        const limit = readDefaultSeconds();
+        if(!isCountUp() && elapsed >= limit){ 
+            clearInterval(interval); 
+            interval=null; 
+            beep(); 
+        }
+    },1000); 
+  }
+  function pause(){ if(interval){ clearInterval(interval); interval=null; } }
+  function reset(){ pause(); elapsed=0; render(); }
+  function resetTimerIfAny(){ 
+      pause(); 
+      if(taskSlide()){ 
+          elapsed=0; 
+          render(); 
+          const s=slides[index]; 
+          ['start','pause','reset'].forEach(cls=>{ 
+              const btn=s.querySelector('.'+cls); 
+              if(!btn) return; 
+              btn.onclick = cls==='start'?start: (cls==='pause'?pause:reset); 
+            }); 
+        } 
+    }
+  function toggleStartPause(){ if(!taskSlide()) return; if(interval) pause(); else start(); }
+  function beep(){ try{const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.4); o.start(); o.stop(ctx.currentTime+0.45);}catch(e){console.warn('Audio context failed.')} }
+
+  // Ensure all links open in a separate tab
+  Array.from(document.querySelectorAll('a')).forEach((a)=>{
+    a.setAttribute('target','_blank');
+    a.setAttribute('rel','noopener noreferrer');
+  });
+
+  // Initialize slide from query parameter if present
+  const _params = new URLSearchParams(window.location.search);
+  const _initialParsed = parseInt(_params.get('slide') || '0', 10);
+  const _initialIndex = Number.isFinite(_initialParsed) ? Math.max(0, Math.min(_initialParsed, slides.length-1)) : 0;
+
+  buildDots();
+  go(_initialIndex);
+})();
+</script>
+</body>
+</html>
